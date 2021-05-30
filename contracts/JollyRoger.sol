@@ -626,15 +626,6 @@ contract JollyRoger is Context, IERC20, Ownable {
         emit Transfer(sender, address(this), tLiquidity);
     }
 
-    function recoverBNB(address payable _owner) external onlyOwner {
-        _owner.transfer(address(this).balance);
-    }
-
-    function recoverTokens(address tokenAddress, uint256 tokenAmount) public virtual onlyOwner {
-        require(tokenAddress != address(this), "Only non native BEP20 tokens");
-        IERC20(tokenAddress).transfer(owner(), tokenAmount);
-    }
-
     function setNewRouterAddress(address _newRouterAddress) external onlyOwner {
         require(_newRouterAddress != address(0), "Router can not be the zero address");
         require(_newRouterAddress != address(pancakeRouter), "This is the current router");
