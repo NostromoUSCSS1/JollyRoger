@@ -1,0 +1,11 @@
+node_modules
+audit
+.yarn
+test
+migrations
+build
+.env
+.yarnrc.yml
+1_initial_migration.js
+truffle-config.js
+yarn.lock

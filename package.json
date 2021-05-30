@@ -1,0 +1,37 @@
+{
+  "name": "JollyRoger",
+  "version": "1.0.0",
+  "license": "MIT",
+  "devDependencies": {
+    "@openzeppelin/contracts": "^4.1.0",
+    "@openzeppelin/contracts-upgradeable": "^3.4.0",
+    "@openzeppelin/test-helpers": "^0.5.11",
+    "@openzeppelin/truffle-upgrades": "^1.7.0",
+    "@pancakeswap-libs/pancake-swap-core": "^0.1.0",
+    "@truffle/hdwallet-provider": "^1.4.0",
+    "@uniswap/v2-core": "^1.0.1",
+    "dotenv": "^10.0.0",
+    "pancakeswap-peripheral": "^1.1.0-beta.0",
+    "truffle-contract-size": "^2.0.1",
+    "truffle-hdwallet-provider": "^1.0.17",
+    "truffle-plugin-verify": "^0.5.8",
+    "web3": "^1.3.6"
+  },
+  "scripts": {
+    "lint": "yarn prettier ./test/*.ts --check",
+    "lint:fix": "yarn prettier ./test/*.ts --write",
+    "clean": "rimraf ./build/",
+    "precompile": "yarn clean",
+    "compile": "waffle .waffle.json",
+    "compile:truffle": "truffle compile",
+    "migrate:testnet": "truffle migrate --reset --network testnet && truffle run verify testing --network testnet",
+    "migrate:dev": "truffle migrate --reset --network development",
+    "migrate:main": "truffle migrate --reset --network mainnet && truffle run verify testing --network mainnet",
+    "verify:testnet": "truffle run verify BlackGOO --network testnet",
+    "verify:main": "truffle run verify BlackGOO --network mainnet",
+    "pretest": "yarn compile",
+    "test": "mocha",
+    "prepublishOnly": "yarn test"
+  },
+  "dependencies": {}
+}
