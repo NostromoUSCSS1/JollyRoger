@@ -9,3 +9,4 @@ build
 1_initial_migration.js
 truffle-config.js
 yarn.lock
+package.json
