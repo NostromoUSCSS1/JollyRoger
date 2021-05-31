@@ -429,12 +429,13 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
 
     function _transfer(address from, address to, uint256 amount) private {
-        uint256 time_deployment = block.timestamp - _tradingStartTime;
         require(from != address(0) || to != address(0), "BEP20: transfer from or to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        require(tradingEnabled, "Trading is not yet enabled");
+        if (from != owner()) {
+            require(tradingEnabled, "Trading is not yet enabled");
+        }
         
-        if(from != owner() && to != owner() && time_deployment <= 1 days) {
+        if(from != owner() && to != owner()) {
             require(amount <= _maxTX(), "Transfer amount cannot exceeds MaxTXAmount");
             uint256 contractBalanceRecipient = balanceOf(to);
             require(contractBalanceRecipient + amount <= _maxWallet(), "Exceeds maximum wallet token amount");
