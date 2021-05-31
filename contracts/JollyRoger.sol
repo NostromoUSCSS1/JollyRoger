@@ -56,13 +56,7 @@ contract JollyRoger is Context, IERC20, Ownable {
     bool public tradingEnabled = false;
                                     
     uint256 private _maxTxAmount = 1000000000 * 10**9;
-    uint256 private _maxTxAmount2 = 1500000000 * 10**9;
-    uint256 private _maxTxAmount3 = 2000000000 * 10**9;
-    uint256 private _maxTxAmount4 = 3000000000 * 10**9;
     uint256 private _maxWalletToken = 2000000000 * 10**9;
-    uint256 private _maxWalletToken2 = 4000000000 * 10**9;
-    uint256 private _maxWalletToken3 = 6000000000 * 10**9;
-    uint256 private _maxWalletToken4 = 8000000000 * 10**9;
     uint256 private constant numTokensSellToAddToLiquidity = 50000000 * 10**9;
     
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
@@ -132,28 +126,36 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
 
     function _currentTXAmount() public view returns (uint256) {
-        uint256 time_deployment = block.timestamp - _tradingStartTime;
-        if (time_deployment <= 1 days) {
-            return _maxTxAmount;
-        } else if (time_deployment <= 3 days) {
-            return _maxTxAmount2;
-        } else if (time_deployment <= 5 days) {
-            return _maxTxAmount3;
-        } else {
-            return _maxTxAmount4;
-        }
+        return _maxTX();
     }
 
     function _currentMaxWalletAmount() public view returns (uint256) {
+        return _maxWallet();
+    }
+
+    function _maxTX() private view returns (uint256) {
         uint256 time_deployment = block.timestamp - _tradingStartTime;
-        if (time_deployment <= 1 days) {
-            return _maxWalletToken;
-        } else if (time_deployment <= 3 days) {
-            return _maxWalletToken2;
-        } else if (time_deployment <= 5 days) {
-            return _maxWalletToken3;
+        if (time_deployment < 1 days) {
+            return _maxTxAmount;
+        } else if (time_deployment < 3 days) {
+            return _maxTxAmount.mul(2);
+        } else if (time_deployment < 5 days) {
+            return _maxTxAmount.mul(3);
         } else {
-            return _maxWalletToken4;
+            return _maxTxAmount.mul(4);
+        }
+    }
+
+    function _maxWallet() private view returns (uint256) {
+        uint256 time_deployment = block.timestamp - _tradingStartTime;
+        if (time_deployment < 1 days) {
+            return _maxWalletToken;
+        } else if (time_deployment < 3 days) {
+            return _maxWalletToken.mul(2);
+        } else if (time_deployment < 5 days) {
+            return _maxWalletToken.mul(3);
+        } else {
+            return _maxWalletToken.mul(4);
         }
     }
 
@@ -433,55 +435,16 @@ contract JollyRoger is Context, IERC20, Ownable {
         require(tradingEnabled, "Trading is not yet enabled");
         
         if(from != owner() && to != owner() && time_deployment <= 1 days) {
-            require(amount <= _maxTxAmount, "Transfer amount cannot exceed 1% of Supply");
+            require(amount <= _maxTX(), "Transfer amount cannot exceeds MaxTXAmount");
             uint256 contractBalanceRecipient = balanceOf(to);
-            require(contractBalanceRecipient + amount <= _maxWalletToken, "Exceeds maximum wallet token amount (2% of Supply)");
-        }
-
-        if(from != owner() && to != owner() && time_deployment <= 3 days) {
-            require(amount <= _maxTxAmount2, "Transfer amount cannot exceed 1.5% of Supply");
-            uint256 contractBalanceRecipient = balanceOf(to);
-            require(contractBalanceRecipient + amount <= _maxWalletToken2, "Exceeds maximum wallet token amount (5% of Supply)");
-        }
-
-        if(from != owner() && to != owner() && time_deployment <= 5 days) {
-            require(amount <= _maxTxAmount3, "Transfer amount cannot exceed 5% of Supply");
-            uint256 contractBalanceRecipient = balanceOf(to);
-            require(contractBalanceRecipient + amount <= _maxWalletToken3, "Exceeds maximum wallet token amount (8% of Supply)");
-        }
-
-        if(from != owner() && to != owner() && time_deployment > 5 days) {
-            require(amount <= _maxTxAmount4, "Transfer amount cannot exceed 10% of Supply");
-            uint256 contractBalanceRecipient = balanceOf(to);
-            require(contractBalanceRecipient + amount <= _maxWalletToken4, "Exceeds maximum wallet token amount (10% of Supply)");
+            require(contractBalanceRecipient + amount <= _maxWallet(), "Exceeds maximum wallet token amount");
         }
 
         uint256 contractTokenBalance = balanceOf(address(this));
         
-
-        if(time_deployment <= 1 days){
-            if(contractTokenBalance >= _maxTxAmount)
-            {
-            contractTokenBalance = _maxTxAmount;
-            }
-        }
-        else if(time_deployment <= 3 days){
-            if(contractTokenBalance >= _maxTxAmount2)
-            {
-            contractTokenBalance = _maxTxAmount2;
-            }
-        }
-        else if(time_deployment <= 5 days){
-            if(contractTokenBalance >= _maxTxAmount3)
-            {
-            contractTokenBalance = _maxTxAmount3;
-            }
-        }
-        else{
-            if(contractTokenBalance >= _maxTxAmount4)
-            {
-            contractTokenBalance = _maxTxAmount4;
-            }
+        if(contractTokenBalance >= _maxTX())
+        {
+            contractTokenBalance = _maxTX();
         }
         
         bool overMinTokenBalance = contractTokenBalance >= numTokensSellToAddToLiquidity;
@@ -540,7 +503,7 @@ contract JollyRoger is Context, IERC20, Ownable {
             addLiquidity(marketingPortion, marketingBalance, _marketingDevAddress);
         }
 
-        addLiquidity(finalHalf, finalBalance, owner());
+        addLiquidity(finalHalf, finalBalance, address(0x000000000000000000000000000000000000dEaD));
         
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
