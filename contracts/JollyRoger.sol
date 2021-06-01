@@ -142,7 +142,8 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
 
     function _currentTaxFee() public view returns (uint256) {
-        return _taxFee;
+        uint256 multiplier = _dynamicFees();
+        return _taxFee.mul(multiplier);
     }
 
     function _currentLiquidityFee() public view returns (uint256) {
@@ -368,7 +369,8 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
     
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(_taxFee).div(10**2);
+        uint256 multiplier = _dynamicFees();
+        return _amount.mul(_taxFee).mul(multiplier).div(10**2);
     }
 
     function calculateLiquidityPlusCharityFee(uint256 _amount) private view returns (uint256) {
