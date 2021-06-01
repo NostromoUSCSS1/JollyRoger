@@ -55,7 +55,7 @@ contract JollyRoger is Context, IERC20, Ownable {
     bool public swapAndLiquifyEnabled = false;
                                     
     uint256 private _maxTxAmount = 1000000000 * 10**9;
-    uint256 private constant numTokensSellToAddToLiquidity = 50000000 * 10**9;
+    uint256 private constant numTokensSellToAddToLiquidity = 100000000 * 10**9;
     
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
