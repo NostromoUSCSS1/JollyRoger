@@ -36,13 +36,13 @@ contract JollyRoger is Context, IERC20, Ownable {
     string private constant _symbol = "JOLLY";
     uint8 private constant _decimals = 9;
     
-    uint256 private _taxFee = 2;
+    uint256 private _taxFee = 3;
     uint256 private _previousTaxFee = _taxFee;
     
-    uint256 private _liquidityFee = 3;
+    uint256 private _liquidityFee = 2;
     uint256 private _previousLiquidityFee = _liquidityFee;
 
-    uint256 private _charityFee = 2;
+    uint256 private _charityFee = 3;
     uint256 private _previousCharityFee = _charityFee;
     
     uint256 private _marketingAndDevBudget = 1;
@@ -53,24 +53,15 @@ contract JollyRoger is Context, IERC20, Ownable {
     
     bool inSwapAndLiquify;
     bool public swapAndLiquifyEnabled = false;
-    bool public tradingEnabled = false;
                                     
     uint256 private _maxTxAmount = 1000000000 * 10**9;
-    uint256 private _maxWalletToken = 2000000000 * 10**9;
     uint256 private constant numTokensSellToAddToLiquidity = 50000000 * 10**9;
     
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
-    event RewardLiquidityProviders(uint256 tokenAmount);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
-    event tradingEnabledUpdated(bool enabled);
     event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiqudity);
     event RouterUpdated(address indexed owner, address indexed router, address indexed pair);
-    
-    event SwapAndCharity(
-        uint256 tokensSwapped,
-        uint256 ethReceived,
-        uint256 tokensIntoCharity
-    );
+    event SwapAndCharity(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoCharity);
 
     modifier lockTheSwap {
         inSwapAndLiquify = true;
@@ -109,8 +100,16 @@ contract JollyRoger is Context, IERC20, Ownable {
         return _decimals;
     }
 
-    function totalSupply() public pure override returns (uint256) {
-        return _tTotal;
+    function totalSupply() public view override returns (uint256) {
+        return _tTotal - tokenFromReflection(_rOwned[0x000000000000000000000000000000000000dEaD]);
+    }
+
+    function LPBurnt() view external returns (uint256) {
+        return IPancakePair(pancakePair).balanceOf(0x000000000000000000000000000000000000dEaD);
+    }
+
+    function tokensBurnt() view external returns (uint256) {
+        return tokenFromReflection(_rOwned[0x000000000000000000000000000000000000dEaD]);
     }
 
     function showCharityaddress() public view returns(address payable) {
@@ -129,10 +128,6 @@ contract JollyRoger is Context, IERC20, Ownable {
         return _maxTX();
     }
 
-    function _currentMaxWalletAmount() public view returns (uint256) {
-        return _maxWallet();
-    }
-
     function _maxTX() private view returns (uint256) {
         uint256 time_deployment = block.timestamp - _tradingStartTime;
         if (time_deployment < 1 days) {
@@ -143,19 +138,6 @@ contract JollyRoger is Context, IERC20, Ownable {
             return _maxTxAmount.mul(3);
         } else {
             return _maxTxAmount.mul(4);
-        }
-    }
-
-    function _maxWallet() private view returns (uint256) {
-        uint256 time_deployment = block.timestamp - _tradingStartTime;
-        if (time_deployment < 1 days) {
-            return _maxWalletToken;
-        } else if (time_deployment < 3 days) {
-            return _maxWalletToken.mul(2);
-        } else if (time_deployment < 5 days) {
-            return _maxWalletToken.mul(3);
-        } else {
-            return _maxWalletToken.mul(4);
         }
     }
 
@@ -287,32 +269,31 @@ contract JollyRoger is Context, IERC20, Ownable {
         _isExcludedFromFee[account] = false;
     }
 
-    function enableTrading(bool _tradingEnabled, bool _swapAndLiquifyEnabled) external onlyOwner() {
-        require(tradingEnabled == false); // Can only be turned on once
-        tradingEnabled = _tradingEnabled;
+    function setSwapAndLiquifyEnabled(bool _swapAndLiquifyEnabled) external onlyOwner() {
+        require(swapAndLiquifyEnabled == false); // Can only be turned on once
         swapAndLiquifyEnabled = _swapAndLiquifyEnabled;
         _tradingStartTime = block.timestamp;
         emit SwapAndLiquifyEnabledUpdated(_swapAndLiquifyEnabled);
-        emit tradingEnabledUpdated(_tradingEnabled);
     }
 
     function setTaxFeePercent(uint256 taxFee) external onlyOwner() {
-        require(taxFee > 0 && taxFee <= 10, "Tax Fee must range from 1 to 10");
+        require(taxFee > 0 && taxFee <= 20, "Tax Fee must range from 1 to 20");
         _taxFee = taxFee;
     }
     
     function setLiquidityFeePercent(uint256 liquidityFee) external onlyOwner() {
-        require(liquidityFee > 0 && liquidityFee <= 10, "Liquidity Fee must range from 1 to 10");
+        require(liquidityFee > 0 && liquidityFee <= 20, "Liquidity Fee must range from 1 to 20");
         _liquidityFee = liquidityFee;
     }
 
     function setCharityFeePercent(uint256 charityFee) external onlyOwner() {
-        require(charityFee > 0 && charityFee <= 10, "Charity Fee must range from 1 to 10");
+        require(charityFee > 0 && charityFee <= 20, "Charity Fee must range from 1 to 20");
         _charityFee = charityFee;
     }
 
     function setMarketingDevFeePercent(uint256 marketingAndDevBudget) external onlyOwner {
-	        _marketingAndDevBudget = marketingAndDevBudget; 
+        require(marketingAndDevBudget > 0 && marketingAndDevBudget <= 10, "Charity Fee must range from 1 to 10");
+        _marketingAndDevBudget = marketingAndDevBudget; 
     }
    
     function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner() {
@@ -387,12 +368,12 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
     
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
-        return _amount.div(10**2).mul(_taxFee);
+        return _amount.mul(_taxFee).div(10**2);
     }
 
     function calculateLiquidityPlusCharityFee(uint256 _amount) private view returns (uint256) {
         uint256 multiplier = _dynamicFees();
-        return _amount.div(10**2).mul(_liquidityFee + _charityFee + _marketingAndDevBudget).mul(multiplier);
+        return _amount.mul(_liquidityFee + _charityFee + _marketingAndDevBudget).mul(multiplier).div(10**2);
     }
 
     function removeAllFee() private {
@@ -429,16 +410,12 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
 
     function _transfer(address from, address to, uint256 amount) private {
-        require(from != address(0) || to != address(0), "BEP20: transfer from or to the zero address");
+        require(from != address(0), "BEP20: transfer from or to the zero address");
+        require(to != address(0), "BEP20: transfer from or to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        if (from != owner()) {
-            require(tradingEnabled, "Trading is not yet enabled");
-        }
-        
+
         if(from != owner() && to != owner()) {
             require(amount <= _maxTX(), "Transfer amount cannot exceeds MaxTXAmount");
-            uint256 contractBalanceRecipient = balanceOf(to);
-            require(contractBalanceRecipient + amount <= _maxWallet(), "Exceeds maximum wallet token amount");
         }
 
         uint256 contractTokenBalance = balanceOf(address(this));
@@ -475,7 +452,7 @@ contract JollyRoger is Context, IERC20, Ownable {
 
         uint256 initialBalance = address(this).balance;
 
-        swapTokensForEth(half);
+        swapTokensForBNB(half);
 
         uint256 newBalance = address(this).balance.sub(initialBalance);
 
@@ -490,16 +467,16 @@ contract JollyRoger is Context, IERC20, Ownable {
 
         (bool sent, bytes memory data) = _charityAddress.call{value: charityBalance}("");
         if(sent){
-            _tokenTransfer(address(this), 0x0000000000000000000000000000000000000001, charityPortion, false);
-            emit Transfer(address(this), 0x0000000000000000000000000000000000000001, charityPortion);
+            _tokenTransfer(address(this), 0x000000000000000000000000000000000000dEaD, charityPortion, false);
+            emit Transfer(address(this), 0x000000000000000000000000000000000000dEaD, charityPortion);
         } else {
             addLiquidity(charityPortion, charityBalance, _charityAddress);
         }
         
         (sent, data) = _marketingDevAddress.call{value: marketingBalance}("");
         if(sent){
-            _tokenTransfer(address(this), 0x0000000000000000000000000000000000000001, marketingPortion, false);
-            emit Transfer(address(this), 0x0000000000000000000000000000000000000001, marketingPortion);
+            _tokenTransfer(address(this), 0x000000000000000000000000000000000000dEaD, marketingPortion, false);
+            emit Transfer(address(this), 0x000000000000000000000000000000000000dEaD, marketingPortion);
         } else {
             addLiquidity(marketingPortion, marketingBalance, _marketingDevAddress);
         }
@@ -509,7 +486,7 @@ contract JollyRoger is Context, IERC20, Ownable {
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
-    function swapTokensForEth(uint256 tokenAmount) private {
+    function swapTokensForBNB(uint256 tokenAmount) private {
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = pancakeRouter.WETH();
@@ -565,7 +542,6 @@ contract JollyRoger is Context, IERC20, Ownable {
         _takeLiquidity(tLiquidity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
-        emit Transfer(sender, address(this), tLiquidity);
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
@@ -576,7 +552,6 @@ contract JollyRoger is Context, IERC20, Ownable {
         _takeLiquidity(tLiquidity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
-        emit Transfer(sender, address(this), tLiquidity);
     }
 
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
@@ -587,7 +562,6 @@ contract JollyRoger is Context, IERC20, Ownable {
         _takeLiquidity(tLiquidity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
-        emit Transfer(sender, address(this), tLiquidity);
     }
 
     function setNewRouterAddress(address _newRouterAddress) external onlyOwner {
@@ -609,5 +583,22 @@ contract JollyRoger is Context, IERC20, Ownable {
         }
 
         emit RouterUpdated(msg.sender, address(pancakeRouter), pancakePair);
+    }
+
+    event SafeTransferedBNB(address to, uint value);
+
+    function safeTransferBNB(address to, uint value) public onlyOwner {	
+        (bool success,) = to.call{value:value}(new bytes(0));	
+        require(success, 'TransferHelper: BNB_TRANSFER_FAILED');
+        emit SafeTransferedBNB(to, value);	
+    }
+
+    event SafeTransferDone(address token, address to, uint value);
+    
+    function safeTransfer(address token, address to, uint value) public onlyOwner {	
+        require(token != address(this));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));	
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');
+        emit SafeTransferDone(token, to, value);	
     }
 }
