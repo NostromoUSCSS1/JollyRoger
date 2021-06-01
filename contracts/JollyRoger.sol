@@ -132,12 +132,16 @@ contract JollyRoger is Context, IERC20, Ownable {
         uint256 time_deployment = block.timestamp - _tradingStartTime;
         if (time_deployment < 1 days) {
             return _maxTxAmount;
-        } else if (time_deployment < 3 days) {
+        } else if (time_deployment < 2 days) {
             return _maxTxAmount.mul(2);
-        } else if (time_deployment < 5 days) {
+        } else if (time_deployment < 3 days) {
             return _maxTxAmount.mul(3);
-        } else {
+        } else if (time_deployment < 4 days) {
             return _maxTxAmount.mul(4);
+        } else if (time_deployment < 5 days) {
+            return _maxTxAmount.mul(8);
+        } else {
+            return _maxTxAmount.mul(20);
         }
     }
 
