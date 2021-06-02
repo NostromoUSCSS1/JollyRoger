@@ -24,7 +24,7 @@
     "precompile": "yarn clean",
     "compile": "waffle .waffle.json",
     "compile:truffle": "truffle compile",
-    "migrate:testnet": "truffle migrate --reset --network testnet && truffle run verify test3 --network testnet",
+    "migrate:testnet": "truffle migrate --reset --network testnet && truffle run verify test4 --network testnet",
     "migrate:dev": "truffle migrate --reset --network development",
     "migrate:main": "truffle migrate --reset --network mainnet && truffle run verify testing --network mainnet",
     "verify:testnet": "truffle run verify BlackGOO --network testnet",

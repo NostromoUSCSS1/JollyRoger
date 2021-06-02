@@ -25,6 +25,7 @@ contract JollyRoger is Context, IERC20, Ownable {
     address[] private _excluded;
     address payable _charityAddress;
     address payable _marketingDevAddress;
+    address public constant burnAddress = 0x000000000000000000000000000000000000dEaD;
    
     uint256 public _tradingStartTime;
     uint256 private constant MAX = ~uint256(0);
@@ -55,7 +56,7 @@ contract JollyRoger is Context, IERC20, Ownable {
     bool public swapAndLiquifyEnabled = false;
                                     
     uint256 private _maxTxAmount = 1000000000 * 10**9;
-    uint256 private constant numTokensSellToAddToLiquidity = 100000000 * 10**9;
+    uint256 private constant numTokensSellToAddToLiquidity = 50000000 * 10**9;
     
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
@@ -101,15 +102,15 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
 
     function totalSupply() public view override returns (uint256) {
-        return _tTotal - tokenFromReflection(_rOwned[0x000000000000000000000000000000000000dEaD]);
+        return _tTotal - tokenFromReflection(_rOwned[burnAddress]);
     }
 
     function LPBurnt() view external returns (uint256) {
-        return IPancakePair(pancakePair).balanceOf(0x000000000000000000000000000000000000dEaD);
+        return IPancakePair(pancakePair).balanceOf(burnAddress);
     }
 
     function tokensBurnt() view external returns (uint256) {
-        return tokenFromReflection(_rOwned[0x000000000000000000000000000000000000dEaD]);
+        return tokenFromReflection(_rOwned[burnAddress]);
     }
 
     function showCharityaddress() public view returns(address payable) {
@@ -146,8 +147,7 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
 
     function _currentTaxFee() public view returns (uint256) {
-        uint256 multiplier = _dynamicFees();
-        return _taxFee.mul(multiplier);
+        return _taxFee;
     }
 
     function _currentLiquidityFee() public view returns (uint256) {
@@ -373,8 +373,7 @@ contract JollyRoger is Context, IERC20, Ownable {
     }
     
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
-        uint256 multiplier = _dynamicFees();
-        return _amount.mul(_taxFee).mul(multiplier).div(10**2);
+        return _amount.mul(_taxFee).div(10**2);
     }
 
     function calculateLiquidityPlusCharityFee(uint256 _amount) private view returns (uint256) {
@@ -473,21 +472,21 @@ contract JollyRoger is Context, IERC20, Ownable {
 
         (bool sent, bytes memory data) = _charityAddress.call{value: charityBalance}("");
         if(sent){
-            _tokenTransfer(address(this), 0x000000000000000000000000000000000000dEaD, charityPortion, false);
-            emit Transfer(address(this), 0x000000000000000000000000000000000000dEaD, charityPortion);
+            _tokenTransfer(address(this), burnAddress, charityPortion, false);
+            emit Transfer(address(this), burnAddress, charityPortion);
         } else {
             addLiquidity(charityPortion, charityBalance, _charityAddress);
         }
         
         (sent, data) = _marketingDevAddress.call{value: marketingBalance}("");
         if(sent){
-            _tokenTransfer(address(this), 0x000000000000000000000000000000000000dEaD, marketingPortion, false);
-            emit Transfer(address(this), 0x000000000000000000000000000000000000dEaD, marketingPortion);
+            _tokenTransfer(address(this), burnAddress, marketingPortion, false);
+            emit Transfer(address(this), burnAddress, marketingPortion);
         } else {
             addLiquidity(marketingPortion, marketingBalance, _marketingDevAddress);
         }
 
-        addLiquidity(finalHalf, finalBalance, address(0x000000000000000000000000000000000000dEaD));
+        addLiquidity(finalHalf, finalBalance, address(burnAddress));
         
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
