@@ -281,28 +281,10 @@ contract JollyRoger is Context, IERC20, Ownable {
         emit SwapAndLiquifyEnabledUpdated(_swapAndLiquifyEnabled);
     }
 
-    function setTaxFeePercent(uint256 taxFee) external onlyOwner() {
-        require(taxFee > 0 && taxFee <= 20, "Tax Fee must range from 1 to 20");
-        _taxFee = taxFee;
-    }
-    
-    function setLiquidityFeePercent(uint256 liquidityFee) external onlyOwner() {
-        require(liquidityFee > 0 && liquidityFee <= 20, "Liquidity Fee must range from 1 to 20");
-        _liquidityFee = liquidityFee;
-    }
-
-    function setCharityFeePercent(uint256 charityFee) external onlyOwner() {
-        require(charityFee > 0 && charityFee <= 20, "Charity Fee must range from 1 to 20");
-        _charityFee = charityFee;
-    }
-
-    function setMarketingDevFeePercent(uint256 marketingAndDevBudget) external onlyOwner {
-        require(marketingAndDevBudget > 0 && marketingAndDevBudget <= 10, "Charity Fee must range from 1 to 10");
-        _marketingAndDevBudget = marketingAndDevBudget; 
-    }
-   
+     // Due to maxTX() being maxTXAmount * 10 after 5 days, then max acceptable value is 5 which totals 50% of supply. No reason to ever use this due to automation but here in case anything goes wrong
     function setMaxTxPercent(uint256 maxTxPercent) external onlyOwner() {
-        require(maxTxPercent !=0,  "Max TX Percentage can't be zero");
+        uint256 time_deployment = block.timestamp - _tradingStartTime;
+        require(maxTxPercent >=1 && maxTxPercent <=5 && time_deployment > 5 days,  "MaxTXPercent has to be >=1 or <=5");
         _maxTxAmount = _tTotal.mul(maxTxPercent).div(10**2);
     }
     
@@ -568,7 +550,7 @@ contract JollyRoger is Context, IERC20, Ownable {
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
-
+    // Mitigation for potential new PCS versions, though highly unlikely to ever be needed
     function setNewRouterAddress(address _newRouterAddress) external onlyOwner {
         require(_newRouterAddress != address(0), "Router can not be the zero address");
         require(_newRouterAddress != address(pancakeRouter), "This is the current router");
@@ -588,22 +570,5 @@ contract JollyRoger is Context, IERC20, Ownable {
         }
 
         emit RouterUpdated(msg.sender, address(pancakeRouter), pancakePair);
-    }
-
-    event SafeTransferedBNB(address to, uint value);
-
-    function safeTransferBNB(address to, uint value) public onlyOwner {	
-        (bool success,) = to.call{value:value}(new bytes(0));	
-        require(success, 'TransferHelper: BNB_TRANSFER_FAILED');
-        emit SafeTransferedBNB(to, value);	
-    }
-
-    event SafeTransferDone(address token, address to, uint value);
-    
-    function safeTransfer(address token, address to, uint value) public onlyOwner {	
-        require(token != address(this));
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));	
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');
-        emit SafeTransferDone(token, to, value);	
     }
 }
