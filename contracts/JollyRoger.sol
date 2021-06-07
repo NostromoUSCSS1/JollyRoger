@@ -43,7 +43,7 @@ contract JollyRoger is Context, IERC20, Ownable {
     uint256 private _liquidityFee = 2;
     uint256 private _previousLiquidityFee = _liquidityFee;
 
-    uint256 private _charityFee = 3;
+    uint256 private _charityFee = 2;
     uint256 private _previousCharityFee = _charityFee;
     
     uint256 private _marketingAndDevBudget = 1;
